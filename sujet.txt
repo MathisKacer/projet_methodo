@@ -1,0 +1,57 @@
+Apprentissage sur données fortement déséquilibrées : comparaison des méthodes de rééquilibrage pour la détection de fraudes bancaires
+
+Dans de nombreuses applications de classification, et notamment dans la détection de fraude bancaire, la classe d’intérêt est très minoritaire. Sur le jeu de données public de transactions bancaires couramment utilisé sur Kaggle, les transactions frauduleuses représentent une fraction très faible de l’ensemble des observations. Cette situation pose un problème méthodologique important : un modèle peut obtenir une excellente accuracy tout en détectant très peu, voire aucune, des fraudes.
+L’objectif du projet est d’étudier les méthodes permettant de construire et d’évaluer correctement des modèles de classification lorsque les classes sont fortement déséquilibrées. Le projet pourra s’appuyer sur un jeu de données public de fraude bancaire, mais l’enjeu n’est pas uniquement de construire le meilleur classifieur : il s’agit de comprendre comment le déséquilibre modifie l’apprentissage, comment les différentes stratégies de rééquilibrage agissent sur le modèle et comment choisir des critères d’évaluation cohérents avec le phénomène étudié.
+Une première partie du travail consistera à établir un modèle de référence entraîné sur les données originales. Plusieurs stratégies pourront ensuite être comparées : sur-échantillonnage aléatoire de la classe minoritaire, méthodes synthétiques telles que SMOTE et ADASYN, sous-échantillonnage de la classe majoritaire, méthodes combinant sur- et sous-échantillonnage, mais également pondération des classes. La bibliothèque imbalanced-learn propose notamment RandomOverSampler, SMOTE, ADASYN, RandomUnderSampler et différentes méthodes de nettoyage ou de combinaison.
+Le projet cherchera notamment aussi à déterminer si le rééquilibrage améliore réellement la capacité de détection des fraudes, et dans quelles conditions. Il faudra éviter de conclure uniquement à partir de l’accuracy ou d’une seule métrique : précision, rappel, F1-score, courbe Precision-Recall et PR-AUC pourront notamment être mobilisés. Dans un contexte de fraude, le choix du seuil de décision est également important car les faux positifs et les faux négatifs peuvent avoir des conséquences très différentes.
+
+Les objectifs sont de :
+· Comprendre le problème statistique posé par un déséquilibre extrême des classes et ses conséquences sur l’apprentissage supervisé.
+· Construire un modèle de référence sur les données non rééquilibrées.
+· Étudier et expliquer différentes méthodes d’over-sampling et d’under-sampling, de la méthode aléatoire aux méthodes plus élaborées comme SMOTE, ADASYN ou les méthodes hybrides.
+· Comparer ces méthodes dans un benchmark reproductible, éventuellement avec plusieurs algorithmes de classification.
+· Évaluer si le rééquilibrage améliore effectivement la détection de la classe minoritaire et identifier les éventuels compromis entre rappel et précision.
+· Étudier l’intérêt d’approches alternatives au rééchantillonnage, notamment la pondération des classes.
+· Déterminer des critères de réussite adaptés à une problématique de fraude plutôt que de se limiter à l’accuracy.
+· Étudier l’influence du seuil de décision et, si les données disponibles le permettent, intégrer une logique de coût différencié entre fraude non détectée et alerte injustifiée.
+· Produire des recommandations méthodologiques sur le choix d’une stratégie de traitement du déséquilibre et sur l’évaluation d’un modèle de détection de fraude.
+
+Méthodologie attendue : 
+
+· Analyse exploratoire : caractériser le déséquilibre entre les classes, analyser les distributions des variables et identifier les éventuelles difficultés liées aux variables anonymisées, aux valeurs extrêmes ou aux différences d’échelle.
+· Construction d’un benchmark de référence : définir un protocole expérimental permettant de comparer les méthodes dans des conditions identiques. Le découpage entraînement/test devra être réalisé avant tout rééchantillonnage afin d’éviter la fuite d’information entre les échantillons.
+· Modèle(s) de référence : commencer par un ou plusieurs classifieurs interprétables et robustes, par exemple une régression logistique, puis éventuellement comparer avec des modèles d’arbres ou de gradient boosting. L’objectif est de distinguer l’effet de l’algorithme de classification de l’effet de la stratégie de rééquilibrage.
+· Over-sampling : étudier au minimum le sur-échantillonnage aléatoire et SMOTE. Selon le temps disponible, comparer également ADASYN et des variantes de SMOTE. RandomOverSampler duplique des observations minoritaires tandis que SMOTE et ADASYN génèrent des observations synthétiques par interpolation ou à partir du voisinage des observations minoritaires.
+· Under-sampling : étudier le sous-échantillonnage aléatoire et, si pertinent, des méthodes de sélection ou de nettoyage telles que Tomek Links, NearMiss ou Edited Nearest Neighbours. Le sous-échantillonnage réduit la classe majoritaire mais peut entraîner une perte d’information ; cette perte devra être analysée dans le benchmark.
+· Méthodes hybrides : tester, lorsque le volume de données et le temps le permettent, des combinaisons telles que SMOTE + nettoyage par ENN ou Tomek Links. La comparaison permettra d’étudier si la génération de données synthétiques suivie d’un nettoyage apporte un bénéfice supplémentaire.
+· Pondération des classes : comparer le rééchantillonnage à une approche consistant à donner davantage de poids aux erreurs commises sur la classe minoritaire. Cette étape est importante car l’amélioration des performances ne provient pas nécessairement d’une modification physique de l’échantillon d’apprentissage.
+· Benchmark expérimental : comparer au minimum « sans traitement », over-sampling aléatoire, SMOTE, under-sampling aléatoire et pondération des classes. Les variantes supplémentaires pourront être ajoutées selon les résultats et le temps disponible. Chaque méthode sera évaluée avec le même protocole de validation.
+· Critères d’évaluation adaptés au déséquilibre : analyser la matrice de confusion, la précision, le rappel/sensibilité, le F1-score, la courbe Precision-Recall et la PR-AUC. L’accuracy sera conservée comme indicateur descriptif mais ne devra pas constituer le critère principal de sélection. Des métriques telles que le balanced accuracy ou le F-beta pourront également être étudiées.
+· Optimisation du seuil : ne pas considérer automatiquement 0,5 comme seuil optimal. Étudier la variation du rappel et de la précision en fonction du seuil et déterminer différents seuils selon l’objectif retenu. Une approche fondée sur F-beta ou sur une fonction de coût peut être étudiée pour donner davantage de poids à la détection des fraudes.
+· Analyse coût-bénéfice : lorsque des hypothèses réalistes peuvent être posées, comparer le coût d’un faux négatif (fraude non détectée) au coût d’un faux positif (transaction légitime bloquée ou contrôlée). L’objectif est de montrer que le « meilleur » seuil dépend du contexte opérationnel et pas uniquement d’une métrique statistique.
+· Robustesse : répéter les expérimentations avec plusieurs découpages ou validations croisées, et analyser la variabilité des résultats. Vérifier également que les observations synthétiques générées par SMOTE ou ADASYN sont produites uniquement à partir du jeu d’entraînement.
+· Interprétation : lorsque cela est possible, utiliser des méthodes d’explicabilité pour identifier les variables contribuant aux décisions du modèle et vérifier si les performances obtenues correspondent à des signaux cohérents.
+· Extension éventuelle : étudier un jeu de données supplémentaire ou une autre problématique de classification déséquilibrée afin de déterminer si les conclusions obtenues sur la fraude bancaire sont généralisables.
+
+Livrables : 
+
+· Rapport méthodologique présentant le problème du déséquilibre, les méthodes étudiées et les résultats du benchmark.
+· Notebook(s) Python reproductibles permettant de préparer les données, entraîner les modèles et comparer les stratégies de rééquilibrage.
+· Benchmark comparatif des méthodes « sans traitement », over-sampling, under-sampling, méthodes hybrides et pondération des classes.
+· Analyse détaillée des métriques adaptées aux données déséquilibrées : précision, rappel, F1, PR-AUC, matrice de confusion et éventuellement balanced accuracy/F-beta.
+· Analyse de l’influence du seuil de décision et, si possible, construction d’une règle de décision intégrant le coût relatif des faux positifs et faux négatifs.
+· Visualisations des courbes Precision-Recall, matrices de confusion et évolution des performances selon le niveau de rééquilibrage.
+· Recommandations méthodologiques permettant de choisir une stratégie de traitement du déséquilibre selon l’objectif de détection et les contraintes opérationnelles.
+· Éventuellement, une courte démonstration interactive permettant de modifier le seuil de décision et d’observer les conséquences sur précision, rappel et nombre d’alertes.
+
+Bibliographie : 
+
+· Chawla, N. V., Bowyer, K. W., Hall, L. O. & Kegelmeyer, W. P. (2002), « SMOTE: Synthetic Minority Over-sampling Technique », Journal of Artificial Intelligence Research, 16, 321–357.
+· He, H., Bai, Y., Garcia, E. A. & Li, S. (2008), « ADASYN: Adaptive Synthetic Sampling Approach for Imbalanced Learning », IEEE International Joint Conference on Neural Networks.
+· Lemaître, G., Nogueira, F. & Aridas, C. K. (2017), « Imbalanced-learn: A Python Toolbox to Tackle the Curse of Imbalanced Datasets in Machine Learning », Journal of Machine Learning Research, 18(17), 1–5.
+· Documentation imbalanced-learn, « Over-sampling », présentation de RandomOverSampler, SMOTE et ADASYN. 
+· Documentation imbalanced-learn, « Under-sampling », présentation des principales méthodes de sous-échantillonnage.
+· Saito, T. & Rehmsmeier, M. (2015), « The Precision-Recall Plot Is More Informative than the ROC Plot When Evaluating Binary Classifiers on Imbalanced Datasets », PLOS ONE, 10(3).
+· He, H. & Garcia, E. A. (2009), « Learning from Imbalanced Data », IEEE Transactions on Knowledge and Data Engineering, 21(9), 1263–1284.
+· Jeu de données public « Credit Card Fraud Detection », disponible sur Kaggle, couramment utilisé pour l’étude de la classification fortement déséquilibrée. Le jeu comprend notamment 284 807 transactions dont 492 fraudes.
+· Exemples et notebooks publics consacrés à la comparaison de SMOTE, class weighting, sous-échantillonnage et optimisation du seuil sur des données de fraude bancaire.

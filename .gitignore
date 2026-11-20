@@ -221,3 +221,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Données (téléchargées depuis Kaggle, non versionnées)
+data/
+*.csv
+*.parquet
+*.zip
