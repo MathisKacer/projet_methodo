@@ -24,6 +24,21 @@ Langue du projet : **français** (code commenté, notebooks, rapport).
 - 1 081 lignes dupliquées (19 fraudes), aucune à classe contradictoire. `load_creditcard(drop_duplicates=True)`
   → 283 726 transactions, 473 fraudes. **C'est la version utilisée pour toute la modélisation.**
 
+## Protocole (`src/fraude/benchmark.py`)
+- `load_split()` : 80/20 stratifié, graine 42 → train 226 980 (378 fraudes), test 56 746 (95 fraudes).
+- `load_temporal_split()` : jour 1 → jour 2. Train 144 236 (272 fraudes, 0,19 %),
+  test 139 490 (201 fraudes, 0,14 %) : **le taux de fraude baisse au jour 2**.
+- `make_pipeline(model, sampler=None, use_hour=False)` : log1p(Amount) + StandardScaler,
+  puis sampler, puis modèle. `Time` brut retiré ; `use_hour=True` ajoute l'heure en sin/cos.
+- `evaluate(pipeline, X, y, name)` : 5 plis × 3 répétitions, **mêmes plis pour toutes les
+  méthodes** (comparaisons appariées), en parallèle. Renvoie un `CVResult` (`metrics` : une ligne
+  par pli, avec la taille de l'échantillon vu après rééchantillonnage ; `predictions` : index de
+  la transaction, y_true, proba, pour chaque répétition). Sauvegardé dans `data/results/<name>/`,
+  rechargeable avec `CVResult.load(name)`.
+- `summarize` / `format_summary` : tableau « moyenne ± écart-type ».
+- `evaluate_on_test` : test final uniquement (ou découpage temporel).
+- Temps indicatifs (128 cœurs) : régression logistique ≈ 5 s ; Random Forest 200 arbres ≈ 7 min.
+
 ## Règles méthodologiques (à respecter dans tout le code)
 - Découpage train/test **stratifié, avant tout rééchantillonnage**, graine fixe.
 - Rééchantillonnage uniquement dans un `imblearn.pipeline.Pipeline`
@@ -57,11 +72,33 @@ Langue du projet : **français** (code commenté, notebooks, rapport).
 7. **Livrables** : rapport méthodologique, notebooks reproductibles, figures (courbes PR,
    matrices de confusion), recommandations, éventuelle démo interactive du seuil.
 
+## Pistes prioritaires (choisies par l'utilisateur, 2026-11-23)
+Elles passent avant les extensions de l'étape 4. Le protocole doit permettre de les traiter
+sans réentraîner : **conserver les probabilités prédites de chaque pli, avec l'index de chaque
+transaction**.
+1. **Découpage temporel ou découpage aléatoire.** Entraîner sur le jour 1 (Time < 86 400 s) et
+   tester sur le jour 2, puis comparer au découpage stratifié aléatoire. Objectif : savoir si
+   les performances et le classement des méthodes tiennent dans le temps. Limite : un seul
+   découpage temporel possible (2 jours), donc pas de variabilité. À traiter comme analyse de
+   robustesse, pas comme protocole principal.
+2. **Typologie des fraudes « faciles » et « difficiles ».** Pour chaque fraude, calculer la
+   proportion de fraudes parmi ses k plus proches voisins (k = 5) dans l'espace standardisé,
+   puis la classer « sûre », « en frontière », « rare » ou « isolée » (Napierała et Stefanowski,
+   2016). Ensuite, mesurer **sur quelle catégorie chaque méthode de rééquilibrage fait gagner
+   (ou perdre) du rappel**, et où elle crée des faux positifs. Objectif : expliquer *pourquoi*
+   SMOTE, ADASYN ou ENN marchent ou non, au lieu de seulement comparer des scores.
+   Point de départ : le t-SNE de l'EDA (un amas de fraudes isolé, d'autres fraudes noyées
+   parmi les légitimes).
+
+Autres pistes notées, moins prioritaires : calibration et correction des probabilités après
+sous-échantillonnage (Dal Pozzolo et al., 2015) ; coût par transaction fondé sur `Amount` ;
+tests statistiques appariés entre méthodes (test t corrigé de Nadeau et Bengio, Wilcoxon).
+
 ## Avancement
 - [x] Module d'import des données (`src/fraude/data.py`)
 - [x] Plan d'étude
 - [x] EDA (`notebooks/01_eda.py`, figures dans `reports/figures/eda_*.png`)
-- [ ] Protocole de benchmark
+- [x] Protocole de benchmark (`src/fraude/benchmark.py`)
 - [ ] Premières expériences
 - [ ] Extensions, seuil/coûts, robustesse, explicabilité
 - [ ] Rapport
@@ -73,6 +110,9 @@ Langue du projet : **français** (code commenté, notebooks, rapport).
 - 2026-11-20 : valeurs extrêmes **conservées** (92 % des fraudes ont une valeur extrême sur les
   8 variables les plus séparatrices, contre 17 % des légitimes).
 - 2026-11-20 : `log1p(Amount)` ; standardisation dans le pipeline avant tout sampler à base de voisins.
+- 2026-11-23 : `Time` brut **retiré** des variables (compteur monotone sur 2 jours, inutilisable
+  en découpage temporel). L'heure relative (sin/cos) est une option, `use_hour=True`, à évaluer.
+  Premier essai en régression logistique : aucun effet (PR-AUC 0,756 contre 0,755).
 
 ## Constats clés de l'EDA (pour le rapport et l'interprétation)
 - Classifieur trivial : accuracy 0,998, balanced accuracy 0,5, rappel 0.

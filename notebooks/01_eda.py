@@ -393,3 +393,5 @@ save(fig, "tsne"); plt.show()
 # | Les fraudes sont majoritairement des valeurs extrêmes | **Ne pas** supprimer les outliers ; envisager `RobustScaler` |
 # | Échelles très différentes (`Time`, `Amount` vs `V`) | Standardisation dans le pipeline, avant SMOTE/ADASYN/kNN |
 # | t-SNE : fraudes en partie groupées, en partie mêlées aux légitimes | Comparer SMOTE vs ADASYN vs méthodes avec nettoyage |
+
+# %%
