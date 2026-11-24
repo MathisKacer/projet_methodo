@@ -228,6 +228,30 @@ def evaluate(pipeline: Pipeline, X: pd.DataFrame, y: pd.Series, name: str,
     return res
 
 
+def quick_evaluate(pipeline: Pipeline, X: pd.DataFrame, y: pd.Series, name: str = "rapide",
+                   seed: int = SEED, threshold: float = 0.5, save: bool = False) -> CVResult:
+    """Évaluation rapide pour l'exploration : UN seul pli de validation (≈ 20 % du train).
+
+    C'est exactement le premier pli de `evaluate` (même graine) : le résultat est donc
+    directement comparable à la ligne (repeat=0, fold=0) de la validation complète.
+    Le test n'est jamais utilisé.
+
+    Attention : ≈ 76 fraudes en validation → la PR-AUC varie d'environ ± 0,05 d'un pli à
+    l'autre. Un écart plus petit entre deux méthodes n'est pas interprétable ici ; il faut
+    le confirmer avec `evaluate`. Pour aller vite, paralléliser dans le modèle (n_jobs=-1),
+    puisqu'il n'y a qu'un pli.
+    """
+    cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=1, random_state=seed)
+    tr, va = next(cv.split(X, y))
+    metrics, preds = _fit_fold(pipeline, X, y, tr, va, 0, 0, threshold)
+    res = CVResult(name=name, metrics=pd.DataFrame([metrics]), predictions=preds,
+                   params={"mode": "rapide (1 pli)", "seed": seed, "threshold": threshold,
+                           "pipeline": repr(pipeline)})
+    if save:
+        res.save()
+    return res
+
+
 def evaluate_on_test(pipeline: Pipeline, split: Split, name: str,
                      threshold: float = 0.5) -> tuple[dict, pd.DataFrame]:
     """Ajuste sur tout le train et évalue sur le test. À n'utiliser qu'en fin d'étude

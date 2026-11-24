@@ -37,7 +37,17 @@ Langue du projet : **français** (code commenté, notebooks, rapport).
   rechargeable avec `CVResult.load(name)`.
 - `summarize` / `format_summary` : tableau « moyenne ± écart-type ».
 - `evaluate_on_test` : test final uniquement (ou découpage temporel).
-- Temps indicatifs (128 cœurs) : régression logistique ≈ 5 s ; Random Forest 200 arbres ≈ 7 min.
+- `quick_evaluate(pipeline, X, y)` : mode exploratoire, **1 seul pli** (exactement le pli 0 de
+  `evaluate`), non sauvegardé par défaut. PR-AUC à ± 0,05 près : tout écart plus petit doit être
+  confirmé par `evaluate`. Mettre `n_jobs=-1` dans le modèle dans ce mode.
+- Pas de GPU sur le pod, et scikit-learn n'en utilise pas de toute façon.
+- **HistGradientBoosting : toujours mettre `l2_regularization` (ex. 1.0).** Sans régularisation,
+  il diverge sur ces données (la PR-AUC chute de 0,76 après 1 itération à 0,14 après 100 itérations,
+  y compris sur l'entraînement). Cause probable : les feuilles contenant quelques fraudes ont une
+  hessienne p(1−p) ≈ 0, donc des pas de Newton énormes. Avec l2 = 1 : PR-AUC 0,84 sur le pli 0.
+- Le pod a un **quota de 15 CPU** (`nproc` affiche 128, mais ce sont les cœurs de la machine hôte). `evaluate` lance
+  déjà 15 plis en parallèle → mettre `n_jobs=1` dans les modèles (sinon surcharge). Temps indicatifs :
+  régression logistique ≈ 5 s ; Random Forest 200 arbres ≈ 4 à 7 min (≈ 1,3 s par arbre sur 180 000 lignes).
 
 ## Règles méthodologiques (à respecter dans tout le code)
 - Découpage train/test **stratifié, avant tout rééchantillonnage**, graine fixe.
